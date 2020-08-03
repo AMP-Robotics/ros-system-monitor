@@ -21,5 +21,5 @@ install(
     config/
     launch/
   DESTINATION
-    ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+    ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
