@@ -18,8 +18,15 @@ catkin_install_python(
 
 install(
   DIRECTORY
-    config/
     launch/
   DESTINATION
-    ${CATKIN_PACKAGE_SHARE_DESTINATION}
+    ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )
+
+install(
+  DIRECTORY
+    config/
+  DESTINATION
+    ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
+)
+
