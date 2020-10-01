@@ -38,7 +38,7 @@
 #    POSSIBILITY OF SUCH DAMAGE.                                           #
 ############################################################################
 
-from __future__ import with_statement
+
 
 import rospy
 
@@ -151,7 +151,7 @@ class CPUMonitor():
                     self._temps_timer.cancel()
                 
             self.check_temps()
-        except Exception, e:
+        except Exception as e:
             rospy.logerr('Unable to restart temp thread. Error: %s' % traceback.format_exc())
             
 
@@ -190,7 +190,7 @@ class CPUMonitor():
                 return diag_vals, diag_msgs, diag_level
 
             tmp = stdout.strip()
-            if unicode(tmp).isnumeric():
+            if str(tmp).isnumeric():
                 temp = float(tmp) / 1000
                 diag_vals.append(KeyValue(key = 'Core %d Temperature' % index, value = str(temp)+"DegC"))
 
@@ -215,7 +215,9 @@ class CPUMonitor():
         try:
             p = subprocess.Popen('cat /proc/cpuinfo | grep MHz',
                                 stdout = subprocess.PIPE,
-                                stderr = subprocess.PIPE, shell = True)
+                                stderr = subprocess.PIPE,
+                                shell = True,
+                                universal_newlines = True)
             stdout, stderr = p.communicate()
             retcode = p.returncode
 
@@ -235,7 +237,7 @@ class CPUMonitor():
                 speed = words[1].strip().split('.')[0] # Conversion to float doesn't work with decimal
                 vals.append(KeyValue(key = 'Core %d Clock Speed' % index, value = speed+"MHz"))
 
-        except Exception, e:
+        except Exception as e:
             rospy.logerr(traceback.format_exc())
             lvl = DiagnosticStatus.ERROR
             msgs.append('Exception')
@@ -254,7 +256,9 @@ class CPUMonitor():
 
         try:
             p = subprocess.Popen('uptime', stdout = subprocess.PIPE,
-                                stderr = subprocess.PIPE, shell = True)
+                                 stderr = subprocess.PIPE,
+                                 shell = True,
+                                 universal_newlines = True)
             stdout, stderr = p.communicate()
             retcode = p.returncode
 
@@ -276,7 +280,7 @@ class CPUMonitor():
             vals.append(KeyValue(key = 'Load Average (5min)', value = str(load5*1e2)+"%"))
             vals.append(KeyValue(key = 'Load Average (15min)', value = str(load15*1e2)+"%"))
 
-        except Exception, e:
+        except Exception as e:
             rospy.logerr(traceback.format_exc())
             level = DiagnosticStatus.ERROR
             vals.append(KeyValue(key = 'Load Average Status', value = traceback.format_exc()))
@@ -294,7 +298,9 @@ class CPUMonitor():
         try:
             p = subprocess.Popen('mpstat -P ALL 1 1',
                                 stdout = subprocess.PIPE,
-                                stderr = subprocess.PIPE, shell = True)
+                                stderr = subprocess.PIPE,
+                                shell = True,
+                                universal_newlines = True)
             stdout, stderr = p.communicate()
             retcode = p.returncode
 
@@ -374,7 +380,7 @@ class CPUMonitor():
                     self._has_error_core_count = True
                 return DiagnosticStatus.ERROR, 'Incorrect number of CPU cores', vals
 
-        except Exception, e:
+        except Exception as e:
             mp_level = DiagnosticStatus.ERROR
             vals.append(KeyValue(key = 'mpstat Exception', value = str(e)))
 
@@ -387,7 +393,9 @@ class CPUMonitor():
         try:
             p = subprocess.Popen('find /sys/devices -name temp1_input',
                                 stdout = subprocess.PIPE,
-                                stderr = subprocess.PIPE, shell = True)
+                                stderr = subprocess.PIPE,
+                                shell = True,
+                                universal_newlines = True)
             stdout, stderr = p.communicate()
             retcode = p.returncode
 
@@ -417,6 +425,7 @@ class CPUMonitor():
 
         if self._check_core_temps:
             core_vals, core_msgs, core_level = self.check_core_temps(self._temp_vals)
+            core_vals = [KeyValue(key = core.key, value = core.value.decode("utf-8")) for core in core_vals]
             diag_vals.extend(core_vals)
             diag_msgs.extend(core_msgs)
             diag_level = max(diag_level, core_level)
@@ -527,7 +536,7 @@ if __name__ == '__main__':
     try:
         rospy.init_node('cpu_monitor_%s' % hostname)
     except rospy.exceptions.ROSInitException:
-        print >> sys.stderr, 'CPU monitor is unable to initialize node. Master may not be running.'
+        print('CPU monitor is unable to initialize node. Master may not be running.', file=sys.stderr)
         sys.exit(0)
 
     cpu_node = CPUMonitor(hostname, options.diag_hostname)
@@ -539,7 +548,7 @@ if __name__ == '__main__':
             cpu_node.publish_stats()
     except KeyboardInterrupt:
         pass
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         rospy.logerr(traceback.format_exc())
 

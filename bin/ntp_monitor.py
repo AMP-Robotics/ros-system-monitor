@@ -78,10 +78,11 @@ def ntp_monitor(offset=500, self_offset=500, diag_hostname = None, error_offset 
     while not rospy.is_shutdown():
         for st,host,off in [(stat,ntp_hostname,offset)]:
             try:
-                p = Popen(["ntpdate", "-q", host], stdout=PIPE, stdin=PIPE, stderr=PIPE)
+                p = Popen(["ntpdate", "-q", host], stdout=PIPE, stdin=PIPE, stderr=PIPE, universal_newlines=True)
                 res = p.wait()
                 (o,e) = p.communicate()
-            except OSError, (errno, msg):
+            except OSError as e:
+                (errno, msg) = e.args
                 if errno == 4:
                     break #ctrl-c interrupt
                 else:

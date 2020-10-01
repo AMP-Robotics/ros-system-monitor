@@ -38,7 +38,7 @@
 #    POSSIBILITY OF SUCH DAMAGE.                                           #
 ############################################################################
 
-from __future__ import with_statement
+
 
 import rospy
 
@@ -124,7 +124,9 @@ class MemMonitor():
         try:
             p = subprocess.Popen('free -tm',
                                 stdout = subprocess.PIPE,
-                                stderr = subprocess.PIPE, shell = True)
+                                stderr = subprocess.PIPE,
+                                shell = True,
+                                universal_newlines = True)
             stdout, stderr = p.communicate()
             retcode = p.returncode
 
@@ -167,7 +169,7 @@ class MemMonitor():
             values.append(KeyValue(key = 'Free Memory', value = free_mem+"M"))
 
             msg = mem_dict[level]
-        except Exception, e:
+        except Exception as e:
             rospy.logerr(traceback.format_exc())
             msg = 'Memory Usage Check Error'
             values.append(KeyValue(key = msg, value = str(e)))
@@ -241,7 +243,7 @@ if __name__ == '__main__':
     try:
         rospy.init_node('mem_monitor_%s' % hostname)
     except rospy.exceptions.ROSInitException:
-        print >> sys.stderr, 'Memory monitor is unable to initialize node. Master may not be running.'
+        print('Memory monitor is unable to initialize node. Master may not be running.', file=sys.stderr)
         sys.exit(0)
 
     mem_node = MemMonitor(hostname, options.diag_hostname)
@@ -253,7 +255,7 @@ if __name__ == '__main__':
             mem_node.publish_stats()
     except KeyboardInterrupt:
         pass
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         rospy.logerr(traceback.format_exc())
 

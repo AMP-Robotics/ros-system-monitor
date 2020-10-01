@@ -38,7 +38,7 @@
 #    POSSIBILITY OF SUCH DAMAGE.                                           #
 ############################################################################
 
-from __future__ import with_statement
+
 
 import rospy
 
@@ -129,7 +129,9 @@ class NetMonitor():
     try:
       p = subprocess.Popen('ifstat -q -S 1 1',
                            stdout = subprocess.PIPE,
-                           stderr = subprocess.PIPE, shell = True)
+                           stderr = subprocess.PIPE,
+                           shell = True,
+                           universal_newlines = True)
       stdout, stderr = p.communicate()
       retcode = p.returncode
       if retcode != 0:
@@ -141,7 +143,7 @@ class NetMonitor():
       ifaces = []
       for i in range(0, len(data)):
         ifaces.append(data[i])
-      data = rows[2].split()
+      data = rows[3].split()
       kb_in = []
       kb_out = []
       for i in range(0, len(data), 2):
@@ -186,7 +188,7 @@ class NetMonitor():
         (retcode, cmd_out) = get_sys_net_stat(ifaces[i], 'tx_errors')
         if retcode == 0:
           values.append(KeyValue(key = 'Tx Errors', value = cmd_out))
-    except Exception, e:
+    except Exception as e:
       rospy.logerr(traceback.format_exc())
       msg = 'Network Usage Check Error'
       values.append(KeyValue(key = msg, value = str(e)))
@@ -203,6 +205,7 @@ class NetMonitor():
                  KeyValue(key = 'Time Since Last Update', value = 0)]
     diag_msgs = []
     net_level, net_msg, net_vals = self.check_network()
+    net_vals = [KeyValue(key = net.key, value = net.value.decode("utf-8") if type(net.value) is bytes else net.value) for net in net_vals]
     diag_vals.extend(net_vals)
     if net_level > 0:
       diag_msgs.append(net_msg)
@@ -248,8 +251,7 @@ if __name__ == '__main__':
   try:
     rospy.init_node('net_monitor_%s' % hostname)
   except rospy.exceptions.ROSInitException:
-    print >> sys.stderr,\
-      'Network monitor is unable to initialize node. Master may not be running.'
+    print('Network monitor is unable to initialize node. Master may not be running.', file=sys.stderr)
     sys.exit(0)
   net_node = NetMonitor(hostname, options.diag_hostname)
   rate = rospy.Rate(1.0)
@@ -259,7 +261,7 @@ if __name__ == '__main__':
       net_node.publish_stats()
   except KeyboardInterrupt:
     pass
-  except Exception, e:
+  except Exception as e:
     traceback.print_exc()
     rospy.logerr(traceback.format_exc())
   net_node.cancel_timers()
