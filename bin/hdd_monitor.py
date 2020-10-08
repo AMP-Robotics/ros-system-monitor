@@ -261,7 +261,7 @@ class hdd_monitor():
                 rows = stdout.split('\n')
                 del rows[0]
                 row_count = 0
-                
+
                 for row in rows:
                     if len(row.split()) < 2:
                         continue

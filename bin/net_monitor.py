@@ -87,7 +87,9 @@ def get_sys_net_stat(iface, sys):
   cmd = 'cat /sys/class/net/%s/statistics/%s' %(iface, sys)
   p = subprocess.Popen(cmd,
                        stdout = subprocess.PIPE,
-                       stderr = subprocess.PIPE, shell = True)
+                       stderr = subprocess.PIPE,
+                       shell = True,
+                       universal_newlines = True)
   stdout, stderr = p.communicate()
   return (p.returncode, stdout.strip())
 
@@ -95,7 +97,9 @@ def get_sys_net(iface, sys):
   cmd = 'cat /sys/class/net/%s/%s' %(iface, sys)
   p = subprocess.Popen(cmd,
                        stdout = subprocess.PIPE,
-                       stderr = subprocess.PIPE, shell = True)
+                       stderr = subprocess.PIPE,
+                       shell = True,
+                       universal_newlines = True)
   stdout, stderr = p.communicate()
   return (p.returncode, stdout.strip())
 
@@ -205,7 +209,6 @@ class NetMonitor():
                  KeyValue(key = 'Time Since Last Update', value = 0)]
     diag_msgs = []
     net_level, net_msg, net_vals = self.check_network()
-    net_vals = [KeyValue(key = net.key, value = net.value.decode("utf-8") if type(net.value) is bytes else net.value) for net in net_vals]
     diag_vals.extend(net_vals)
     if net_level > 0:
       diag_msgs.append(net_msg)

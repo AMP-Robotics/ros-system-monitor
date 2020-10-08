@@ -178,7 +178,9 @@ class CPUMonitor():
 
             cmd = 'cat %s' % temp_str
             p = subprocess.Popen(cmd, stdout = subprocess.PIPE,
-                                stderr = subprocess.PIPE, shell = True)
+                                stderr = subprocess.PIPE,
+                                shell = True,
+                                universal_newlines = True)
             stdout, stderr = p.communicate()
             retcode = p.returncode
 
@@ -425,7 +427,6 @@ class CPUMonitor():
 
         if self._check_core_temps:
             core_vals, core_msgs, core_level = self.check_core_temps(self._temp_vals)
-            core_vals = [KeyValue(key = core.key, value = core.value.decode("utf-8")) for core in core_vals]
             diag_vals.extend(core_vals)
             diag_msgs.extend(core_msgs)
             diag_level = max(diag_level, core_level)
@@ -438,11 +439,11 @@ class CPUMonitor():
 
         with self._mutex:
             self._last_temp_time = rospy.get_time()
-            
+
             self._temp_stat.level = diag_level
             self._temp_stat.message = message
             self._temp_stat.values = diag_vals
-            
+
             if not rospy.is_shutdown():
                 self._temps_timer = threading.Timer(5.0, self.check_temps)
                 self._temps_timer.start()
