@@ -94,6 +94,7 @@ class MemMonitor():
         self._mem_level_error = rospy.get_param('~mem_level_error', mem_level_error)
 
         self._usage_timer = None
+        self._juggle_usage_timer = None
         
         self._usage_stat = DiagnosticStatus()
         self._usage_stat.name = 'Memory Usage (%s)' % diag_hostname
@@ -209,6 +210,11 @@ class MemMonitor():
             self._usage_stat.message = usage_msg
             
             if not rospy.is_shutdown():
+                # https://bugs.python.org/issue37788
+                if self._juggle_usage_timer is not None:
+                    self._juggle_usage_timer.join()
+                self._juggle_usage_timer = self._usage_timer
+
                 self._usage_timer = threading.Timer(5.0, self.check_usage)
                 self._usage_timer.start()
             else:
