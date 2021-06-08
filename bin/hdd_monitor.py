@@ -149,6 +149,7 @@ class hdd_monitor():
 
         self._last_temp_time = 0
         self._temp_timer = None
+        self._juggle_temp_timer = None
         if not self._no_temp:
           self._temp_stat = DiagnosticStatus()
           self._temp_stat.name = "HDD Temperature (%s)" % diag_hostname
@@ -161,6 +162,7 @@ class hdd_monitor():
 
         self._last_usage_time = 0
         self._usage_timer = None
+        self._juggle_usage_timer = None
         self._usage_stat = DiagnosticStatus()
         self._usage_stat.level = DiagnosticStatus.ERROR
         self._usage_stat.hardware_id = hostname
@@ -232,6 +234,11 @@ class hdd_monitor():
                 self._temp_stat.level = DiagnosticStatus.OK
 
             if not rospy.is_shutdown():
+                # https://bugs.python.org/issue37788
+                if self._juggle_temp_timer is not None:
+                    self._juggle_temp_timer.join()
+                self._juggle_temp_timer = self._temp_timer
+
                 self._temp_timer = threading.Timer(10.0, self.check_temps)
                 self._temp_timer.start()
             else:
@@ -322,6 +329,11 @@ class hdd_monitor():
             self._usage_stat.level = diag_level
             
             if not rospy.is_shutdown():
+                # https://bugs.python.org/issue37788
+                if self._juggle_usage_timer is not None:
+                    self._juggle_usage_timer.join()
+                self._juggle_usage_timer = self._usage_timer
+
                 self._usage_timer = threading.Timer(5.0, self.check_disk_usage)
                 self._usage_timer.start()
             else:

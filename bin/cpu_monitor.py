@@ -108,7 +108,9 @@ class CPUMonitor():
         self._num_cores = multiprocessing.cpu_count()
 
         self._temps_timer = None
+        self._juggle_temps_timer = None
         self._usage_timer = None
+        self._juggle_usage_timer =None
         
         # Get temp_input files
         self._temp_vals = self.get_core_temp_names()
@@ -445,6 +447,11 @@ class CPUMonitor():
             self._temp_stat.values = diag_vals
 
             if not rospy.is_shutdown():
+                # https://bugs.python.org/issue37788
+                if self._juggle_temps_timer is not None:
+                    self._juggle_temps_timer.join()
+                self._juggle_temps_timer = self._temps_timer
+                
                 self._temps_timer = threading.Timer(5.0, self.check_temps)
                 self._temps_timer.start()
             else:
@@ -495,6 +502,11 @@ class CPUMonitor():
             self._usage_stat.message = usage_msg
             
             if not rospy.is_shutdown():
+                # https://bugs.python.org/issue37788
+                if self._juggle_usage_timer is not None:
+                    self._juggle_usage_timer.join()
+                self._juggle_usage_timer = self._usage_timer
+
                 self._usage_timer = threading.Timer(5.0, self.check_usage)
                 self._usage_timer.start()
             else:

@@ -110,6 +110,7 @@ class NetMonitor():
     self._net_level_warn = rospy.get_param('~net_level_warn', net_level_warn)
     self._net_capacity = rospy.get_param('~net_capacity', net_capacity)
     self._usage_timer = None
+    self._juggle_timer = None
     self._usage_stat = DiagnosticStatus()
     self._usage_stat.name = 'Network Usage (%s)' % diag_hostname
     self._usage_stat.level = 1
@@ -223,6 +224,11 @@ class NetMonitor():
       self._usage_stat.values = diag_vals
       self._usage_stat.message = usage_msg
       if not rospy.is_shutdown():
+        # https://bugs.python.org/issue37788
+        if self._juggle_timer is not None:
+          self._juggle_timer.join()
+        self._juggle_timer = self._usage_timer
+    
         self._usage_timer = threading.Timer(5.0, self.check_usage)
         self._usage_timer.start()
       else:
